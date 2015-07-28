@@ -13,6 +13,18 @@ var src = {};
 var watch = false;
 var browserSync;
 
+var AUTOPREFIXER_BROWSERS = [                 // https://github.com/ai/autoprefixer
+  'ie >= 10',
+  'ie_mob >= 10',
+  'ff >= 30',
+  'chrome >= 34',
+  'safari >= 7',
+  'opera >= 23',
+  'ios >= 7',
+  'android >= 4.4',
+  'bb >= 10'
+];
+
 // the default task
 gulp.task('default', ['sync']);
 
@@ -22,7 +34,7 @@ gulp.task('clean', del.bind(null, ['.tmp', 'build/*', '!/build/.git']));
 // Static files copy
 gulp.task('assets', function () {
   src.assets = [
-    './src/public/*'
+    './src/public/**/*.*'
   ];
   return gulp.src(src.assets)
     .pipe($.changed('build/public'))
@@ -30,11 +42,27 @@ gulp.task('assets', function () {
     .pipe($.size({title: 'assets'}));
 });
 
+//style less
+gulp.task('styles', function () {
+  src.styles = [
+    './src/app/styles/**/*.less'
+  ];
+  gulp.src(src.styles)
+    .pipe($.plumber())
+    .pipe($.less())
+    .pipe($.autoprefixer({
+      browsers: AUTOPREFIXER_BROWSERS
+    }))
+    .pipe($.minifyCss())
+    .pipe(gulp.dest('build/public/styles'));
+});
+
 // server files copy
 gulp.task('resources', function () {
   src.resources = [
     './src/server.js'
   ];
+
   return gulp.src(src.resources)
     .pipe($.changed('build'))
     .pipe(gulp.dest('build'))
@@ -80,7 +108,7 @@ gulp.task('bundle', function (cb) {
 
 // build task
 gulp.task('build', ['clean'], function (cb) {
-  runSequence(['assets', 'resources'], ['bundle'], cb);
+  runSequence(['assets', 'resources', 'styles'], ['bundle'], cb);
 });
 
 // build watch
@@ -89,6 +117,7 @@ gulp.task('build:watch', function (cb) {
 
   runSequence('build', function () {
     gulp.watch(src.assets, ['assets']);
+    gulp.watch(src.styles, ['styles']);
     cb();
   });
 });

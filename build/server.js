@@ -1,8 +1,21 @@
 var koa = require('koa');
-var staticServer = require('koa-static');
+var views = require('co-views');
+var path = require('path');
+
 var app = koa();
 
-app.use(staticServer('./build/public'));
+// render views
+var render = views(path.join(__dirname, 'public/views'), {
+  map: {html: 'swig'}
+});
+
+// static server
+app.use(require('koa-static')(path.join(__dirname, 'public')));
+
+// render views
+app.use(function*() {
+  this.body = yield render('index');
+});
 
 var PORT = process.env.PORT || 5000;
 
